@@ -1,0 +1,6 @@
+﻿  compiler.cpp
+  instruction.cpp
+  instruction.h
+C:\Users\ASUS\Desktop\compiler\compiler\instruction.cpp(25,16): warning C4804: "<=": niebezpieczne użycie typu "bool" w operacji
+C:\Users\ASUS\Desktop\compiler\compiler\instruction.cpp(27,1): error C2059: błąd składniowy: „}”
+  Generowanie kodu...
