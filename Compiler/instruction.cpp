@@ -123,18 +123,82 @@ int evaluateExpression(string expression, std::unordered_map<std::string, int> v
     return values.top();
 }
 
-void AssignmentInstruction::execute(std::unordered_map<std::string, int>& variables)
+bool evaluateCondition(int leftValue, int rightValue, const std::string& cmpOp) {
+    if (cmpOp == "==") return leftValue == rightValue;
+    if (cmpOp == "!=") return leftValue != rightValue;
+    if (cmpOp == "<")  return leftValue < rightValue;
+    if (cmpOp == ">")  return leftValue > rightValue;
+    if (cmpOp == "<=") return leftValue <= rightValue;
+    if (cmpOp == ">=") return leftValue >= rightValue;
+    throw std::runtime_error("Unknown comparison operator: " + cmpOp);
+}
+
+void splitCondition(const std::string& condition,
+    std::string& leftExpr,
+    std::string& rightExpr,
+    std::string& cmpOp)
+{
+    std::string cmpOps[] = { "==", "!=", "<=", ">=", "<", ">" };
+    for (const auto& op : cmpOps) {
+        size_t pos = condition.find(op);
+        if (pos != std::string::npos) {
+            cmpOp = op;
+            leftExpr = condition.substr(0, pos);
+            rightExpr = condition.substr(pos + op.size());
+            return;
+        }
+    }
+    throw std::runtime_error("Invalid condition: " + condition);
+}
+
+
+
+void AssignmentInstruction::execute(
+    std::unordered_map<std::string, int>& variables,
+    size_t& instructionPointer,
+    const std::unordered_map<std::string, size_t>& labelPositions) 
 {
     int value = evaluateExpression(right, variables);
 	variables[left] = value;
+    instructionPointer++;
 }
 
-void IfInstruction::execute(std::unordered_map<std::string, int>& variables)
+void IfInstruction::execute(
+    std::unordered_map<std::string, int>& variables,
+    size_t& instructionPointer,
+    const std::unordered_map<std::string, size_t>& labelPositions)
 {
+    string leftExpr, rightExpr, cmpOp;
+    std::vector<std::unique_ptr<Instruction>>* correctBlock = nullptr;
+    for (auto& block : blocks)
+    {
+        if (block.condition != "")
+        {
+            splitCondition(block.condition, leftExpr, rightExpr, cmpOp);
 
+            int leftValue = evaluateExpression(leftExpr, variables);
+            int rightValue = evaluateExpression(rightExpr, variables);
+
+
+            if (!evaluateCondition(leftValue, rightValue, cmpOp)) continue;
+        }
+        correctBlock = &block.block;
+        break;
+    }
+    for (auto& instr : *correctBlock) {
+        instr->execute(variables);
+    }
+    instructionPointer++;
 }
 
-void GotoInstruction::execute(std::unordered_map<std::string, int>& variables)
-{
+void GotoInstruction::execute(
+    std::unordered_map<std::string, int>& variables,
+    size_t& instructionPointer,
+    const std::unordered_map<std::string, size_t>& labelPositions)
+{  
+    auto tagPos = labelPositions.find(tag);
+    if (tagPos == labelPositions.end())
+        throw std::runtime_error("Unknown label: " + tag);
 
+    instructionPointer = tagPos->second;
 }
