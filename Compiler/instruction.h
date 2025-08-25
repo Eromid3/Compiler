@@ -7,15 +7,14 @@ struct Instruction {
     virtual ~Instruction() = default;
     virtual void execute(std::unordered_map<std::string, int>& variables,
         size_t& instructionPointer,
-        const std::unordered_map<std::string, size_t>& labelPositions) = 0;
+        std::unordered_map<std::string, size_t>& labelPositions) = 0;
 };
 
 struct AssignmentInstruction : Instruction {
-    std::string left;
-    std::string right;
+    std::string expr;
     void execute(std::unordered_map<std::string, int>& variables,
         size_t& instructionPointer,
-        const std::unordered_map<std::string, size_t>& labelPositions) override;
+        std::unordered_map<std::string, size_t>& labelPositions) override;
 };
 
 
@@ -25,16 +24,22 @@ struct ConditionBlock {
 };
 
 struct IfInstruction : Instruction {
-    std::string condition;
     std::vector<ConditionBlock> blocks;
     void execute(std::unordered_map<std::string, int>& variables,
         size_t& instructionPointer,
-        const std::unordered_map<std::string, size_t>& labelPositions) override;
+        std::unordered_map<std::string, size_t>& labelPositions) override;
 };
 
 struct GotoInstruction : Instruction {
     std::string tag;
     void execute(std::unordered_map<std::string, int>& variables,
         size_t& instructionPointer,
-        const std::unordered_map<std::string, size_t>& labelPositions) override;
+        std::unordered_map<std::string, size_t>& labelPositions) override;
+};
+
+struct SaveTagInstruction : Instruction {
+    std::string tag;
+    void execute(std::unordered_map<std::string, int>& variables,
+        size_t& instructionPointer,
+        std::unordered_map<std::string, size_t>& labelPositions) override;
 };

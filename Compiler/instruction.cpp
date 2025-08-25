@@ -156,17 +156,22 @@ void splitCondition(const std::string& condition,
 void AssignmentInstruction::execute(
     std::unordered_map<std::string, int>& variables,
     size_t& instructionPointer,
-    const std::unordered_map<std::string, size_t>& labelPositions) 
+    std::unordered_map<std::string, size_t>& labelPositions) 
 {
-    int value = evaluateExpression(right, variables);
-	variables[left] = value;
-    instructionPointer++;
+    size_t pos = expr.find('=');
+    if (pos != std::string::npos) {
+        std::string left = expr.substr(0, pos);
+        std::string right = expr.substr(pos + 1);
+        int value = evaluateExpression(right, variables);
+        variables[left] = value;
+        instructionPointer++;
+    }
 }
 
 void IfInstruction::execute(
     std::unordered_map<std::string, int>& variables,
     size_t& instructionPointer,
-    const std::unordered_map<std::string, size_t>& labelPositions)
+    std::unordered_map<std::string, size_t>& labelPositions)
 {
     string leftExpr, rightExpr, cmpOp;
     std::vector<std::unique_ptr<Instruction>>* correctBlock = nullptr;
@@ -186,7 +191,7 @@ void IfInstruction::execute(
         break;
     }
     for (auto& instr : *correctBlock) {
-        instr->execute(variables);
+        instr->execute(variables, instructionPointer, labelPositions);
     }
     instructionPointer++;
 }
@@ -194,11 +199,19 @@ void IfInstruction::execute(
 void GotoInstruction::execute(
     std::unordered_map<std::string, int>& variables,
     size_t& instructionPointer,
-    const std::unordered_map<std::string, size_t>& labelPositions)
+    std::unordered_map<std::string, size_t>& labelPositions)
 {  
     auto tagPos = labelPositions.find(tag);
     if (tagPos == labelPositions.end())
         throw std::runtime_error("Unknown label: " + tag);
 
-    instructionPointer = tagPos->second;
+    instructionPointer = tagPos->second + 1;
+}
+
+void SaveTagInstruction::execute(
+    std::unordered_map<std::string, int>& variables,
+    size_t& instructionPointer,
+    std::unordered_map<std::string, size_t>& labelPositions)
+{
+    labelPositions[tag.substr(1)] = instructionPointer;
 }

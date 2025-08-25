@@ -1,18 +1,16 @@
 #pragma once
-#include <string>
-
-using namespace std;
+#include "instruction.h"
 
 class Parser
 {
 public:
-	Parser(string& sourceCode);
+	Parser(std::string& sourceCode);
 
 private:
-	string code;
-	size_t pos;
+	std::string code;
 
-	void skipWhitespace();
-	string getToken();
+	std::vector<std::unique_ptr<Instruction>> parseProgram(const std::vector<std::string>& lines);
+	std::unique_ptr<Instruction> parseLine(const std::string& line);
+
 
 };
