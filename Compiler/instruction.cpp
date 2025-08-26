@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include "instruction.h"
 #include <stack>
+#include "parser.h"
 
 using namespace std;
 
@@ -161,6 +162,7 @@ void AssignmentInstruction::execute(
     size_t pos = expr.find('=');
     if (pos != std::string::npos) {
         std::string left = expr.substr(0, pos);
+        skipWhitespace(left);
         std::string right = expr.substr(pos + 1);
         int value = evaluateExpression(right, variables);
         variables[left] = value;
@@ -174,7 +176,7 @@ void IfInstruction::execute(
     std::unordered_map<std::string, size_t>& labelPositions)
 {
     string leftExpr, rightExpr, cmpOp;
-    std::vector<std::unique_ptr<Instruction>>* correctBlock = nullptr;
+    std::vector<std::string> correctBlock;
     for (auto& block : blocks)
     {
         if (block.condition != "")
@@ -187,10 +189,11 @@ void IfInstruction::execute(
 
             if (!evaluateCondition(leftValue, rightValue, cmpOp)) continue;
         }
-        correctBlock = &block.block;
+        correctBlock = block.block;
         break;
     }
-    for (auto& instr : *correctBlock) {
+    std::vector<std::unique_ptr<Instruction>> blockProgram = parseProgram(correctBlock);
+    for (auto& instr : blockProgram) {
         instr->execute(variables, instructionPointer, labelPositions);
     }
     instructionPointer++;
@@ -205,7 +208,7 @@ void GotoInstruction::execute(
     if (tagPos == labelPositions.end())
         throw std::runtime_error("Unknown label: " + tag);
 
-    instructionPointer = tagPos->second + 1;
+    instructionPointer = tagPos->second;
 }
 
 void SaveTagInstruction::execute(
@@ -213,5 +216,5 @@ void SaveTagInstruction::execute(
     size_t& instructionPointer,
     std::unordered_map<std::string, size_t>& labelPositions)
 {
-    labelPositions[tag.substr(1)] = instructionPointer;
+    labelPositions[tag] = instructionPointer;
 }

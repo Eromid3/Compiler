@@ -20,7 +20,7 @@ struct AssignmentInstruction : Instruction {
 
 struct ConditionBlock {
     std::string condition; // empty string = else
-    std::vector<std::unique_ptr<Instruction>> block;
+    std::vector<std::string> block;
 };
 
 struct IfInstruction : Instruction {
