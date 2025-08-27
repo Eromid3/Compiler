@@ -4,12 +4,29 @@
 #include <iostream>
 
 
-std::string removeFirstWhiteSpaces(const std::string& line) {
-    size_t i = 0;
-    while (i < line.size() && (line[i] == ' ' || line[i] == '\t' || line[i] == '\r' || line[i] == '\n')) {
-        i++;
+std::string removeFirstWhiteSpaces(std::string line) {
+    line.erase(0, line.find_first_not_of(" \t\n\r"));
+    return line;
+}
+
+std::string parseEscapes(const std::string& text) {
+    std::string result;
+    for (size_t i = 0; i < text.size(); i++) {
+        if (text[i] == '\\' && i + 1 < text.size()) {
+            i++;
+            switch (text[i]) {
+            case 'n': result += '\n'; break;
+            case 't': result += '\t'; break;
+            case '\\': result += '\\'; break;
+            case '"': result += '"'; break;
+            default: result += text[i]; break;
+            }
+        }
+        else {
+            result += text[i];
+        }
     }
-    return line.substr(i);
+    return result;
 }
 
 ConditionBlock findBlock(const std::vector<std::string>& lines, size_t& i, const std::string& condition)
@@ -36,7 +53,6 @@ ConditionBlock findBlock(const std::vector<std::string>& lines, size_t& i, const
         else {
             block.block.push_back(line);
         }
-        block.block.push_back(line);
     }
 
     return block;
@@ -47,6 +63,23 @@ std::unique_ptr<Instruction> parseLine(const std::string& line)
     if (line.substr(0, 5) == "goto ") {
         auto instr = std::make_unique<GotoInstruction>();
         instr->tag = line.substr(5); // after "goto "
+        return instr;
+    }
+    else if (line.substr(0, 5) == "print") {
+        auto instr = std::make_unique<PrintInstruction>();
+        size_t start = line.find("(");
+        size_t end = line.find(")");
+        std::string text;
+        if (line[start + 1] != '"') {
+            instr->variable = true;
+            text = line.substr(start + 1, end - start - 1);
+        }
+        else
+        {
+            text = line.substr(start + 2, end - start - 3);
+            text = parseEscapes(text);
+        }
+        instr->text = text;
         return instr;
     }
     else if (!line.empty() && line[0] == '#') {

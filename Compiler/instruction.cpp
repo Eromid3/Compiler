@@ -1,3 +1,4 @@
+#pragma once
 #include <vector>
 #include <string>
 #include <memory>
@@ -9,8 +10,14 @@
 
 using namespace std;
 
-void skipWhitespace(string& line) {
-    line.erase(0, line.find_first_not_of(" \t\n\r"));
+void skipWhitespace(std::string& line) {
+    std::string result;
+    for (char c : line) {
+        if (!std::isspace(static_cast<unsigned char>(c))) {
+            result += c; // dodajemy tylko znaki, które nie s¹ bia³e
+        }
+    }
+    line = result;
 }
 
 int getPriority(char op) {
@@ -19,20 +26,26 @@ int getPriority(char op) {
     return 0;
 }
 
+bool isOp(string token) {
+    return token == "+" || token == "-" || token == "*" || token == "/";
+}
+
 string getNextToken(string& expression)
 {
     int i = 0;
-    while (i < expression.size() && std::isdigit(expression[i]))
-    { 
-        i++;
+   
+    if (isOp(string(1, expression[i])) || expression[i] == '(' || expression[i] == ')') {
+        string result = string(1, expression[i]);
+        expression.erase(0, 1);
+        return result;
     }
-    string result = expression.substr(0, i);
-    expression.erase(0, i);
-    return result;
-}
-
-bool isOp(string token) {
-    return token == "+" || token == "-" || token == "*" || token == "/";
+    else
+    {
+        while (i < expression.size() && !isOp(string(1, expression[i])) && expression[i] != '(' && expression[i] != ')' && !isspace(expression[i])) i++;
+        string result = expression.substr(0, i);
+        expression.erase(0, i);
+        return result;
+    }
 }
 
 vector<string> makeRPN(string expression)
@@ -41,9 +54,9 @@ vector<string> makeRPN(string expression)
     stack<char> ops;
     vector<string> output;
     string token;
-    while (expression != "")
+    while (!expression.empty())
     {
-        token = getNextToken(expression);
+        token = getNextToken(expression); 
         if (isOp(token))
         {
             int priority = getPriority(token[0]);
@@ -193,8 +206,9 @@ void IfInstruction::execute(
         break;
     }
     std::vector<std::unique_ptr<Instruction>> blockProgram = parseProgram(correctBlock);
+    size_t innerInstructionPointer = instructionPointer;
     for (auto& instr : blockProgram) {
-        instr->execute(variables, instructionPointer, labelPositions);
+        instr->execute(variables, innerInstructionPointer, labelPositions);
     }
     instructionPointer++;
 }
@@ -217,4 +231,15 @@ void SaveTagInstruction::execute(
     std::unordered_map<std::string, size_t>& labelPositions)
 {
     labelPositions[tag] = instructionPointer;
+    instructionPointer++;
+}
+
+void PrintInstruction::execute(
+    std::unordered_map<std::string, int>& variables,
+    size_t& instructionPointer,
+    std::unordered_map<std::string, size_t>& labelPositions)
+{
+    if (variable) cout << variables[text];
+    else cout << text;
+    instructionPointer++;
 }

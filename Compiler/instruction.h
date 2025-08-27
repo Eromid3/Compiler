@@ -1,3 +1,4 @@
+#pragma once
 #include <vector>
 #include <string>
 #include <memory>
@@ -39,6 +40,14 @@ struct GotoInstruction : Instruction {
 
 struct SaveTagInstruction : Instruction {
     std::string tag;
+    void execute(std::unordered_map<std::string, int>& variables,
+        size_t& instructionPointer,
+        std::unordered_map<std::string, size_t>& labelPositions) override;
+};
+
+struct PrintInstruction : Instruction {
+    std::string text;
+    bool variable = false;
     void execute(std::unordered_map<std::string, int>& variables,
         size_t& instructionPointer,
         std::unordered_map<std::string, size_t>& labelPositions) override;

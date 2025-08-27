@@ -5,7 +5,7 @@
 #include "instruction.h"
 
 // Removes leading spaces, tabs, and newline characters
-std::string removeFirstWhiteSpaces(const std::string& line);
+std::string removeFirstWhiteSpaces(std::string line);
 
 // Finds a block of instructions between { and }, with a given condition
 ConditionBlock findBlock(const std::vector<std::string>& lines, size_t& i, const std::string& condition);

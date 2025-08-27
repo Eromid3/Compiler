@@ -1,11 +1,13 @@
-﻿#include <fstream>
+﻿#pragma once
+#include <fstream>
 #include <sstream>
 #include <vector>
 #include <string>
 #include <memory>
 #include <iostream>
+#include <unordered_map>
+#include <iostream>
 #include "parser.h"
-#include "instruction.h"
 
 std::vector<std::string> readFileLines(const std::string& filename) {
     std::ifstream file(filename);
@@ -20,17 +22,30 @@ std::vector<std::string> readFileLines(const std::string& filename) {
     return lines;
 }
 
+void printVariables(const std::unordered_map<std::string, int>& variables) {
+    std::cout << "=== VARIABLES ===\n";
+    for (const auto& kv : variables) {
+        std::cout << kv.first << " = " << kv.second << "\n";
+    }
+    std::cout << "=================\n";
+}
+
+
 int main() {
     try {
         auto lines = readFileLines("main.txt");
         auto program = parseProgram(lines);
 
-        // test: wypisz wszystkie linie w pierwszym AssignmentInstruction
-        for (auto& instr : program) {
-            if (auto assign = dynamic_cast<AssignmentInstruction*>(instr.get())) {
-                std::cout << "Assignment: " << assign->expr << "\n";
-            }
+        std::unordered_map<std::string, int> variables;
+        size_t instructionPointer = 0;
+        std::unordered_map<std::string, size_t> labelPositions;
+
+        // wykonujemy instrukcje
+        while (instructionPointer < program.size()) {
+            program[instructionPointer]->execute(variables, instructionPointer, labelPositions);
         }
+
+        //printVariables(variables);
 
     }
     catch (const std::exception& e) {
