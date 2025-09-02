@@ -34,9 +34,7 @@ ConditionBlock findBlock(const std::vector<std::string>& lines, size_t& i, const
     ConditionBlock block;
     block.condition = condition;
 
-    if (removeFirstWhiteSpaces(lines[i]).find('{') == std::string::npos) {
-        i++;
-    }
+    if (removeFirstWhiteSpaces(lines[i]).find('{') == std::string::npos) i++;
 
     int braceCount = 0;
     for (; i < lines.size(); i++) {
@@ -100,23 +98,44 @@ std::unique_ptr<Instruction> parseLine(const std::string& line)
 
 std::vector<std::unique_ptr<Instruction>> parseProgram(const std::vector<std::string>& lines)
 {
-	std::vector<std::unique_ptr<Instruction>> program;
+    std::vector<std::unique_ptr<Instruction>> program;
 
     for (size_t i = 0; i < lines.size(); i++) {
         std::string line = removeFirstWhiteSpaces(lines[i]);
         if (line.empty()) continue;
-        if (line.substr(0, 2) == "if" || line.substr(0, 4) == "elif" || line.substr(0, 4) == "else") {
+
+        if (line.substr(0, 2) == "if") { // if the program encounters if
             auto instr = std::make_unique<IfInstruction>();
-            size_t start = line.find("(");
-            size_t end = line.find(")");
-            std::string condition = (start == std::string::npos) ? "" : line.substr(start + 1, end - start - 1);
-            instr->blocks.push_back(findBlock(lines, i, condition));
+
+            // getting blocks
+            while (true) {
+                std::string condition = "";
+                if (line.substr(0, 2) == "if" || line.substr(0, 4) == "elif") {
+                    size_t start = line.find("(");
+                    size_t end = line.find(")");
+                    condition = line.substr(start + 1, end - start - 1);
+                }
+
+                instr->blocks.push_back(findBlock(lines, i, condition));
+
+                // check if next line is elif/else
+                if (i + 1 < lines.size()) {
+                    std::string nextLine = removeFirstWhiteSpaces(lines[i + 1]);
+                    if (nextLine.substr(0, 4) == "elif" || nextLine.substr(0, 4) == "else") {
+                        i++;
+                        line = removeFirstWhiteSpaces(lines[i]);
+                        continue;
+                    }
+                }
+                break; // no elif/else - end
+            }
+
             program.push_back(std::move(instr));
         }
         else {
-			program.push_back(std::move(parseLine(line)));
-		}
-	}
+            program.push_back(std::move(parseLine(line)));
+        }
+    }
 
-	return program;
+    return program;
 }

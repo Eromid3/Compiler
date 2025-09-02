@@ -8,8 +8,6 @@
 #include <stack>
 #include "parser.h"
 
-using namespace std;
-
 void skipWhitespace(std::string& line) {
     std::string result;
     for (char c : line) {
@@ -26,34 +24,34 @@ int getPriority(char op) {
     return 0;
 }
 
-bool isOp(string token) {
+bool isOp(std::string token) {
     return token == "+" || token == "-" || token == "*" || token == "/";
 }
 
-string getNextToken(string& expression)
+std::string getNextToken(std::string& expression)
 {
     int i = 0;
    
-    if (isOp(string(1, expression[i])) || expression[i] == '(' || expression[i] == ')') {
-        string result = string(1, expression[i]);
+    if (isOp(std::string(1, expression[i])) || expression[i] == '(' || expression[i] == ')') {
+        std::string result = std::string(1, expression[i]);
         expression.erase(0, 1);
         return result;
     }
     else
     {
-        while (i < expression.size() && !isOp(string(1, expression[i])) && expression[i] != '(' && expression[i] != ')' && !isspace(expression[i])) i++;
-        string result = expression.substr(0, i);
+        while (i < expression.size() && !isOp(std::string(1, expression[i])) && expression[i] != '(' && expression[i] != ')' && !isspace(expression[i])) i++;
+        std::string result = expression.substr(0, i);
         expression.erase(0, i);
         return result;
     }
 }
 
-vector<string> makeRPN(string expression)
+std::vector<std::string> makeRPN(std::string expression)
 {
     skipWhitespace(expression);
-    stack<char> ops;
-    vector<string> output;
-    string token;
+    std::stack<char> ops;
+    std::vector<std::string> output;
+    std::string token;
     while (!expression.empty())
     {
         token = getNextToken(expression); 
@@ -69,7 +67,7 @@ vector<string> makeRPN(string expression)
                     ops.push(top);
                     break;
                 }
-                output.push_back(string(1, top));
+                output.push_back(std::string(1, top));
             }
             ops.push(token[0]);
         }
@@ -96,15 +94,15 @@ vector<string> makeRPN(string expression)
     return output;
 }
 
-int evaluateExpression(string expression, std::unordered_map<std::string, int> variables)
+int evaluateExpression(std::string expression, std::unordered_map<std::string, int> variables)
 {
-    vector<string> rpn = makeRPN(expression);
-    stack<int> values;
-    for (string& token : rpn)
+    std::vector<std::string> rpn = makeRPN(expression);
+    std::stack<int> values;
+    for (std::string& token : rpn)
     {
         if (isOp(token))
         {
-            if (values.size() < 2) throw runtime_error("Invalid expression");
+            if (values.size() < 2) throw std::runtime_error("Invalid expression");
 
             int b = values.top(); values.pop();
             int a = values.top(); values.pop();
@@ -125,14 +123,14 @@ int evaluateExpression(string expression, std::unordered_map<std::string, int> v
             }
             else {
                 if (variables.find(token) == variables.end())
-                    throw runtime_error("Undefined variable: " + token);
+                    throw std::runtime_error("Undefined variable: " + token);
                 value = variables[token];
             }
             values.push(value);
         }
     }
 
-    if (values.size() != 1) throw runtime_error("Invalid expression result");
+    if (values.size() != 1) throw std::runtime_error("Invalid expression result");
 
     return values.top();
 }
@@ -188,29 +186,30 @@ void IfInstruction::execute(
     size_t& instructionPointer,
     std::unordered_map<std::string, size_t>& labelPositions)
 {
-    string leftExpr, rightExpr, cmpOp;
+    std::string leftExpr, rightExpr, cmpOp;
     std::vector<std::string> correctBlock;
     for (auto& block : blocks)
     {
-        if (block.condition != "")
-        {
+        if (!block.condition.empty()) {
+            std::string leftExpr, rightExpr, cmpOp;
             splitCondition(block.condition, leftExpr, rightExpr, cmpOp);
 
             int leftValue = evaluateExpression(leftExpr, variables);
             int rightValue = evaluateExpression(rightExpr, variables);
 
-
-            if (!evaluateCondition(leftValue, rightValue, cmpOp)) continue;
+            if (!evaluateCondition(leftValue, rightValue, cmpOp))
+                continue;
         }
-        correctBlock = block.block;
+        auto blockProgram = parseProgram(block.block);
+        size_t before = instructionPointer;
+        for (auto& instr : blockProgram) {
+            instr->execute(variables, instructionPointer, labelPositions);
+            if (instructionPointer != before + 1) return;
+            else instructionPointer--;
+        }
         break;
     }
-    std::vector<std::unique_ptr<Instruction>> blockProgram = parseProgram(correctBlock);
-    size_t innerInstructionPointer = instructionPointer;
-    for (auto& instr : blockProgram) {
-        instr->execute(variables, innerInstructionPointer, labelPositions);
-    }
-    instructionPointer++;
+    instructionPointer++; // if with elif, else are counted as one instruction
 }
 
 void GotoInstruction::execute(
@@ -239,7 +238,7 @@ void PrintInstruction::execute(
     size_t& instructionPointer,
     std::unordered_map<std::string, size_t>& labelPositions)
 {
-    if (variable) cout << variables[text];
-    else cout << text;
+    if (variable) std::cout << variables[text];
+    else std::cout << text;
     instructionPointer++;
 }
